@@ -10,6 +10,8 @@ Claude Code reads `CLAUDE.md` files automatically based on your working director
 
 The key insight: **give Claude the right context at the right time**. Too much context degrades quality. Too little means Claude guesses wrong.
 
+This isn't just a token-cost concern. LLMs suffer from "lost in the middle" effects — relevant information buried inside long inputs is weighted less than content at the edges, and padding inputs with irrelevant context measurably degrades output quality regardless of window size. The layered architecture is a context-pruning strategy: always-on context stays minimal (Layer 1), directory-scoped context auto-loads only when working there (Layer 2), and everything else loads on demand (Layers 3-7).
+
 ---
 
 ## Architecture: Layered Context
@@ -675,6 +677,17 @@ Periodically verify (e.g., per sprint):
 - Do the tool versions match `package.json` / `mise.toml`?
 - Are all deep docs listed in `.claude/docs/index.md`?
 - Has any package been added or removed without a CLAUDE.md?
+
+### Pruning Check
+
+Staleness audits catch *wrong* context. Pruning audits catch *bloated* context — material that's still accurate but no longer earns its place in always-loaded layers. Run alongside the staleness check:
+
+- Is root CLAUDE.md over ~100 lines? Move sections to package files or deep docs.
+- Are there sections in root that only apply to one package? Demote to that package's CLAUDE.md.
+- Are deep docs over ~500 lines? Split into focused sub-docs so Claude can load just the relevant slice.
+- Is `MEMORY.md` approaching 200 lines? Archive resolved gotchas — the truncation is silent.
+- Does any layer repeat information from another layer? Deduplicate, keep the deeper copy, leave a pointer.
+- Are there long code examples in always-loaded files? Move to `.claude/docs/` or skill `references/`.
 
 ---
 
